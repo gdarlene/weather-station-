@@ -6,6 +6,8 @@ This project is for the recording of temperature and humidity values in a weathe
 - Javascript (for the server side): Node.js
 
 ## Manual Guidance
+Clone the repository: 
+`git clone https://github.com/gdarlene/weather-station-.git`
 install the following packages:
 - mqtt
 - cors
