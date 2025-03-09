@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Weather Station (MQTT WebSockets)</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/mqtt/4.3.7/mqtt.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        body { font-family: Arial, sans-serif; text-align: center; margin-top: 50px; }
+        .container { width: 300px; margin: auto; padding: 20px; border: 2px solid darkgreen; border-radius: 2px; }
+        h2 { color:darkgreen; }
+        .data { font-size: 24px; font-weight: bold; color: darkgreen; }
+        #chart { margin-top: 20px; }
+    </style>
+</head>
+<body>
+    <h2>MQTT Weather Station</h2>
+    <div class="container">
+        <p>Temperature: <span id="temp" class="data">--</span> °C</p>
+        <p>Humidity: <span id="humidity" class="data">--</span> %</p>
+    </div>
+
+    <canvas id="chart" width="400" height="200"></canvas>
+
+    <script>
+        const mqttClient = mqtt.connect('ws://157.173.101.159:9001');
+        const ctx = document.getElementById('chart').getContext('2d');
+        const tempData = [];
+        const humidityData = [];
+        const labels = [];
+
+        const chart = new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: labels,
+                datasets: [
+                    {
+                        label: 'Temperature (°C)',
+                        data: tempData,
+                        borderColor: 'orange',
+                        fill: false
+                    },
+                    {
+                        label: 'Humidity (%)',
+                        data: humidityData,
+                        borderColor: 'green',
+                        fill: false
+                    }
+                ]
+            }
+        });
+
+        mqttClient.on('connect', () => {
+            mqttClient.subscribe("/work_group_01/room_temp/temperature");
+            mqttClient.subscribe("/work_group_01/room_temp/humidity");
+        });
+
+        mqttClient.on('message', (topic, message) => {
+            const value = parseFloat(message.toString());
+            const now = new Date().toLocaleTimeString();
+
+            if (topic === "/work_group_01/room_temp/temperature") {
+                document.getElementById("temp").innerText = value;
+                tempData.push(value);
+                labels.push(now);
+            } else if (topic === "/work_group_01/room_temp/humidity") {
+                document.getElementById("humidity").innerText = value;
+                humidityData.push(value);
+            }
+
+            // Update chart
+            chart.update();
+        });
+
+        // Fetch data every 5 minutes (300000 ms)
+        setInterval(() => {
+            fetch('/data')
+                .then(response => response.json())
+                .then(data => {
+                    if (data.length > 0) {
+                        // Process and average data here if needed
+                    }
+                });
+        }, 300000);
+    </script>
+</body>
+</html>
